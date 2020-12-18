@@ -17,6 +17,21 @@
  * Define Global Variables
  *
  */
+
+//  Wait till the DOM is read
+function docReady(fn) {
+  // see if DOM is already available
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
+    // call on next available tick
+    setTimeout(fn, 1);
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
+  }
+}
+
 const sections = [
   {
     id: "section1",
@@ -71,21 +86,18 @@ function isSectionOnScreen(el, buffer) {
 }
 
 /** Add active Class */
-function addActiveClass(id) {
+function addActiveClass(sectionID) {
   //Add Link Active
   document.querySelector(".link__active")?.classList.remove("link__active");
-  document.querySelector(`[href="#${id}"]`).classList.add("link__active");
+  document
+    .querySelector(`[data-section="${sectionID}"]`)
+    ?.classList.add("link__active");
 
   //Add Section Active
   document
     .querySelector(".your-active-class")
     ?.classList.remove("your-active-class");
-  document.querySelector(`#${id}`).classList.add("your-active-class");
-
-  //Update Location Hash
-  setTimeout(() => {
-    window.location.hash = id;
-  }, 0);
+  document.querySelector(`#${sectionID}`).classList.add("your-active-class");
 }
 
 //Build the Nav
@@ -94,9 +106,9 @@ let sectionsString = "";
 let navHTML = "";
 const buildSections = () => {
   sections.forEach((sectionObj) => {
-    console.log(sectionObj);
+    let sectionID = `section_${sectionObj.id}`;
     let sectionString = `
-          <section id="${sectionObj.id}" data-nav="${sectionObj.title}" class="your-active-class">
+          <section id="${sectionID}" data-nav="${sectionObj.title}" class="your-active-class">
               <div class="landing__container">
               <h2>${sectionObj.title}</h2>
               <p>${sectionObj.paragraph}</p>
@@ -106,11 +118,29 @@ const buildSections = () => {
     sectionsString = sectionsString + sectionString;
     navHTML =
       navHTML +
-      `<li><a id="link_${sectionObj.id}" href="#${sectionObj.id}">${sectionObj.title}</a></li>`;
+      `<li><a id="link_${sectionObj.id}" class="nav-link" data-section="${sectionID}" >${sectionObj.title}</a></li>`;
   });
 };
+
 buildSections();
-console.log(sectionsString);
+
+//Link the nav to the section when scrolling
+const addEventListenernav = () => {
+  const elements = document.getElementsByClassName("nav-link");
+  console.log("addEventListenernav -> elements", elements);
+  const navlink = function () {
+    const attribute = this.getAttribute("data-section");
+    console.log("navlink -> attribute", attribute);
+    let sectionDiv = document.getElementById(attribute);
+    sectionDiv.scrollIntoView();
+    addActiveClass(attribute);
+    alert(attribute);
+  };
+
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].addEventListener("click", navlink, false);
+  }
+};
 
 document.getElementById("main-content").innerHTML = sectionsString;
 document.getElementById("navbar__list").innerHTML = navHTML;
@@ -129,10 +159,15 @@ window.addEventListener("scroll", () => {
 });
 
 //Go to top button
-window.onscroll = function() {scrollFunction()};
+window.onscroll = function () {
+  scrollFunction();
+};
 
 function scrollFunction() {
-  if (document.body.scrollTop > 100| document.documentElement.scrollTop > 100) {
+  if (
+    (document.body.scrollTop > 100) |
+    (document.documentElement.scrollTop > 100)
+  ) {
     topbutton.style.display = "block";
   } else {
     topbutton.style.display = "none";
@@ -140,11 +175,12 @@ function scrollFunction() {
 }
 
 function topFunction() {
-  document.body.scrollTop = 0; 
-  document.documentElement.scrollTop = 0; 
-   
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
 }
 
-
-
-console.log("");
+// Don't attach listener till the DOM is read
+docReady(function () {
+  // DOM is loaded and ready for manipulation here
+  addEventListenernav();
+});
